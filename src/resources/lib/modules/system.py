@@ -522,7 +522,15 @@ class system:
             if hasattr(self, 'update_in_progress'):
                 self.oe.dbg_log('system::check_updates_v2', 'Update in progress (exit)', 0)
                 return
-            url = '%s?i=%s&d=%s&pa=%s&v=%s&l=%s' % (
+            major_url = '%s?i=%s&d=%s&pa=%s&v=%s&l=%s' % (
+                self.UPDATE_REQUEST_URL,
+                self.oe.SYSTEMID,
+                self.oe.DISTRIBUTION,
+                self.oe.ARCHITECTURE,
+                re.sub(r'.0', '.90.000', self.oe.VERSION_ID),
+                self.cpu_lm_flag,
+                )
+            minor_url = '%s?i=%s&d=%s&pa=%s&v=%s&l=%s' % (
                 self.UPDATE_REQUEST_URL,
                 self.oe.SYSTEMID,
                 self.oe.DISTRIBUTION,
@@ -530,32 +538,55 @@ class system:
                 self.oe.VERSION,
                 self.cpu_lm_flag,
                 )
-            self.oe.dbg_log('system::check_updates_v2', 'URL: %s' % url, 0)
-            update_json = self.oe.load_url(url)
-            self.oe.dbg_log('system::check_updates_v2', 'RESULT: %s' % repr(update_json), 0)
-            if update_json != '':
-                update_json = json.loads(update_json)
-                self.last_update_check = time.time()
-                silent = True
-                answer = 0
-                if 'update' in update_json['data'] and 'folder' in update_json['data']:
-                    self.update_file = self.UPDATE_DOWNLOAD_URL % (update_json['data']['folder'], update_json['data']['update'])
-                    if self.struct['update']['settings']['UpdateNotify']['value'] == '1':
-                        self.oe.notify(self.oe._(32363).encode('utf-8'), self.oe._(32364).encode('utf-8'))
-                    if self.struct['update']['settings']['AutoUpdate']['value'] == 'manual' and force == True:
-                        silent = False
+            self.oe.dbg_log('system::check_updates_v2', 'URL: %s' % major_url, 0)
+            self.oe.dbg_log('system::check_updates_v2', 'URL: %s' % minor_url, 0)
+            major_update_json = self.oe.load_url(major_url)
+            minor_update_json = self.oe.load_url(minor_url)
+            self.oe.dbg_log('system::check_updates_v2', 'RESULT: %s' % repr(major_update_json), 0)
+            self.oe.dbg_log('system::check_updates_v2', 'RESULT: %s' % repr(minor_update_json), 0)
+            major_update = False
+            if major_update_json != '':
+                if self.struct['update']['settings']['AutoUpdate']['value'] == 'manual' and force:
+                    update_json = json.loads(major_update_json)
+                    self.last_update_check = time.time()
+                    if 'update' in update_json['data'] and 'folder' in update_json['data']:
+                        self.update_file = self.UPDATE_DOWNLOAD_URL % (update_json['data']['folder'], update_json['data']['update'])
                         xbmcDialog = xbmcgui.Dialog()
                         answer = xbmcDialog.yesno('LibreELEC Update', self.oe._(32188).encode('utf-8') + ':  ' + self.oe.VERSION,
                                                   self.oe._(32187).encode('utf-8') + ':  ' + update_json['data']['update'].split('-'
                                                   )[-1].replace('.tar', '').encode('utf-8'), self.oe._(32180).encode('utf-8'))
                         xbmcDialog = None
                         del xbmcDialog
-                        if answer == 1:
+                        if answer:
                             self.update_in_progress = True
                             self.do_autoupdate()
-                    if self.struct['update']['settings']['AutoUpdate']['value'] == 'auto' and force == False:
+                            major_update = True
+            if minor_update_json != '' and not major_update:
+                update_json = json.loads(minor_update_json)
+                self.last_update_check = time.time()
+                if 'update' in update_json['data'] and 'folder' in update_json['data']:
+                    self.update_file = self.UPDATE_DOWNLOAD_URL % (update_json['data']['folder'], update_json['data']['update'])
+                    if self.struct['update']['settings']['UpdateNotify']['value'] == '1':
+                        self.oe.notify(self.oe._(32363).encode('utf-8'), self.oe._(32364).encode('utf-8'))
+                    if self.struct['update']['settings']['AutoUpdate']['value'] == 'manual' and force:
+                        xbmcDialog = xbmcgui.Dialog()
+                        answer = xbmcDialog.yesno('LibreELEC Update', self.oe._(32188).encode('utf-8') + ':  ' + self.oe.VERSION,
+                                                  self.oe._(32187).encode('utf-8') + ':  ' + update_json['data']['update'].split('-'
+                                                  )[-1].replace('.tar', '').encode('utf-8'), self.oe._(32180).encode('utf-8'))
+                        xbmcDialog = None
+                        del xbmcDialog
+                        if answer:
+                            self.update_in_progress = True
+                            self.do_autoupdate()
+                    if self.struct['update']['settings']['AutoUpdate']['value'] == 'auto' and not force:
                         self.update_in_progress = True
                         self.do_autoupdate(None, True)
+            if minor_update_json == '' and major_update_json == '' and force:
+                xbmcDialog = xbmcgui.Dialog()
+                answer = xbmcDialog.ok('LibreELEC Update', 'no update available')
+                xbmcDialog = None
+                del xbmcDialog
+                    
             self.oe.dbg_log('system::check_updates_v2', 'exit_function', 0)
         except Exception, e:
             self.oe.dbg_log('system::check_updates_v2', 'ERROR: (' + repr(e) + ')')
