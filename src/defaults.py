@@ -56,6 +56,11 @@ bluetooth = {
     'D_OBEXD_ROOT': '/storage/downloads/',
     }
 
+pulseaudio = {
+    'PULSEAUDIO_DAEMON': '/usr/bin/pulseaudio',
+    'ENABLED': lambda : (True if os.path.exists(pulseaudio['PULSEAUDIO_DAEMON']) else False),
+    }
+
 ################################################################################
 # Service Module
 ################################################################################

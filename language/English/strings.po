@@ -240,6 +240,10 @@ msgctxt "#770"
 msgid "Select an available version"
 msgstr ""
 
+msgctxt "#780"
+msgid "Configure PulseAudio devices"
+msgstr ""
+
 msgctxt "#32001"
 msgid "Services"
 msgstr ""
@@ -806,4 +810,24 @@ msgstr ""
 
 msgctxt "#32392"
 msgid "Enable Lirc"
+msgstr ""
+
+msgctxt "#32393"
+msgid "Pulseaudio"
+msgstr ""
+
+msgctxt "#32394"
+msgid "Set as Default"
+msgstr ""
+
+msgctxt "#32395"
+msgid "Set Profile"
+msgstr ""
+
+msgctxt "#32396"
+msgid "Select Profile"
+msgstr ""
+
+msgctxt "#32397"
+msgid "Profile"
 msgstr ""

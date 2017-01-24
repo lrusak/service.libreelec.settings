@@ -44,12 +44,15 @@ class mainWindow(xbmcgui.WindowXMLDialog):
         self.guiList = 1100
         self.guiNetList = 1200
         self.guiBtList = 1300
+        self.guiPulseList = 1600
         self.guiOther = 1900
         self.guiLists = [
             1000,
             1100,
             1200,
             1300,
+            1400,
+            1600,
             ]
         self.buttons = {
             1: {
@@ -382,6 +385,7 @@ class mainWindow(xbmcgui.WindowXMLDialog):
                     self.getControl(1100).setAnimations([('conditional', 'effect=fade start=0 end=0 time=1 condition=True')])
                     self.getControl(1200).setAnimations([('conditional', 'effect=fade start=0 end=0 time=1 condition=True')])
                     self.getControl(1300).setAnimations([('conditional', 'effect=fade start=0 end=0 time=1 condition=True')])
+                    self.getControl(1600).setAnimations([('conditional', 'effect=fade start=0 end=0 time=1 condition=True')])
                     self.getControl(1900).setAnimations([('conditional', 'effect=fade start=0 end=0 time=1 condition=True')])
                     self.lastModul = selectedMenuItem.getProperty('Modul')
                     self.lastMenu = lastMenu
