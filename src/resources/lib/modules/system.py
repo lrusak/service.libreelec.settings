@@ -274,8 +274,30 @@ class system:
                             },
                         },
                     },
-                'debug': {
+                'reset': {
                     'order': 9,
+                    'name': 32323,
+                    'settings': {
+                        'password_change': {
+                            'name': 32324,
+                            'value': '0',
+                            'action': 'change_password',
+                            'type': 'button',
+                            'InfoText': 724,
+                            'order': 1,
+                            },
+                        'password_reset': {
+                            'name': 32325,
+                            'value': '0',
+                            'action': 'reset_password',
+                            'type': 'button',
+                            'InfoText': 725,
+                            'order': 2,
+                            },
+                        },
+                    },
+                'debug': {
+                    'order': 10,
                     'name': 32376,
                     'settings': {
                         'paste': {
@@ -874,15 +896,15 @@ class system:
                 self.oe.set_busy(0)
 
             xbmcDialog = xbmcgui.Dialog()
-            bckDir = xbmcDialog.browse( 0, 
+            bckDir = xbmcDialog.browse( 0,
                                         self.oe._(32371).encode('utf-8'),
-                                        'files', 
-                                        '', 
-                                        False, 
-                                        False, 
+                                        'files',
+                                        '',
+                                        False,
+                                        False,
                                         self.BACKUP_DESTINATION )
 
-            if bckDir and os.path.exists(bckDir): 
+            if bckDir and os.path.exists(bckDir):
                 # free space check
                 try:
                     folder_stat = os.statvfs("/storage")
@@ -894,7 +916,7 @@ class system:
                         return 0
                 except:
                     pass
-                    
+
                 self.backup_dlg = xbmcgui.DialogProgress()
                 self.backup_dlg.create('LibreELEC', self.oe._(32375).encode('utf-8'), ' ', ' ')
                 if not os.path.exists(self.BACKUP_DESTINATION):
@@ -917,16 +939,16 @@ class system:
             self.oe.dbg_log('system::do_restore', 'enter_function', 0)
             copy_success = 0
             xbmcDialog = xbmcgui.Dialog()
-            restore_file_path = xbmcDialog.browse( 1, 
+            restore_file_path = xbmcDialog.browse( 1,
                                               self.oe._(32373).encode('utf-8'),
-                                              'files', 
-                                              '??????????????.tar', 
-                                              False, 
-                                              False, 
+                                              'files',
+                                              '??????????????.tar',
+                                              False,
+                                              False,
                                               self.BACKUP_DESTINATION )
-            
+
             restore_file_name = restore_file_path.split('/')[-1]
-            
+
             if not os.path.exists(self.RESTORE_DIR):
                 os.makedirs(self.RESTORE_DIR)
             else:
@@ -1066,6 +1088,53 @@ class system:
             self.oe.dbg_log('system::wizard_set_hostname', 'exit_function', 0)
         except Exception, e:
             self.oe.dbg_log('system::wizard_set_hostname', 'ERROR: (' + repr(e) + ')')
+
+    def change_password(self):
+        try:
+            self.oe.dbg_log('system::change_password', 'enter_function', 0)
+            xbmcDialog = xbmcgui.Dialog()
+
+            while True:
+                password1 = xbmcDialog.input('Change root password',type=xbmcgui.INPUT_ALPHANUM, option=xbmcgui.ALPHANUM_HIDE_INPUT)
+                password2 = xbmcDialog.input('Verify root password',type=xbmcgui.INPUT_ALPHANUM, option=xbmcgui.ALPHANUM_HIDE_INPUT)
+
+                if password1 == password2:
+                    break
+
+                xbmcDialog.ok('Change Root Password', 'Passwords do not match, please try again')
+
+            new_hashed_pass = crypt.crypt(password1, '$6$' + ''.join([random.choice(string.ascii_letters + string.digits) for _ in range(16)]))
+
+            # set regex
+            regex = re.compile('(^root:)(.*)(:[0-9]+::::::$)')
+
+            new_lines = []
+
+            with open('/storage/.config/shadow', 'r') as fin:
+                for line in fin:
+                    new_lines.append(regex.sub(r'\1' + new_hashed_pass + r'\3', line))
+
+            with open('/storage/.config/shadow', 'w') as fout:
+                for line in new_lines:
+                    fout.write(line)
+
+            xbmcDialog.ok('Change Root Password', 'Root password successfully changed')
+
+            self.oe.dbg_log('system::change_password', 'exit_function', 0)
+        except Exception, e:
+            self.oe.dbg_log('system::change_password', 'ERROR: (' + repr(e) + ')')
+
+    def reset_password(self):
+        try:
+            self.oe.dbg_log('system::reset_password', 'enter_function', 0)
+            xbmcDialog = xbmcgui.Dialog()
+            answer = xbmcDialog.yesno('Reset Root Password', 'Are you sure?')
+            if answer:
+                if self.oe.copy_file('/usr/config/shadow', '/storage/.config/shadow') != None:
+                    xbmcDialog.ok('Reset Root Password', 'Root password successfully reset')
+            self.oe.dbg_log('system::reset_password', 'exit_function', 0)
+        except Exception, e:
+            self.oe.dbg_log('system::reset_password', 'ERROR: (' + repr(e) + ')')
 
 
 class updateThread(threading.Thread):
